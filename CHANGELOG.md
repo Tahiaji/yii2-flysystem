@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## 2.0
+
+- update dependencies for flysystem 3.0
+- update accouding to changelog https://flysystem.thephpleague.com/docs/upgrade-from-1.x/
+- remove "Donating" block from readme (links are invalid)
+
+## 1.1.0
+
 - Fix Dropbox adapter not working
 
 ## 1.0.0-rc1

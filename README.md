@@ -522,14 +522,14 @@ Yii::$app->fs->writeStream('filename.ext', $stream);
 To update file
 
 ```php
-Yii::$app->fs->update('filename.ext', 'contents');
+Yii::$app->fs->write('filename.ext', 'contents');
 ```
 
 To update file using stream contents
 
 ```php
 $stream = fopen('/path/to/somefile.ext', 'r+');
-Yii::$app->fs->updateStream('filename.ext', $stream);
+Yii::$app->fs->writeStream('filename.ext', $stream);
 ```
 
 ### Writing or updating files
@@ -537,14 +537,14 @@ Yii::$app->fs->updateStream('filename.ext', $stream);
 To write or update file
 
 ```php
-Yii::$app->fs->put('filename.ext', 'contents');
+Yii::$app->fs->write('filename.ext', 'contents');
 ```
 
 To write or update file using stream contents
 
 ```php
 $stream = fopen('/path/to/somefile.ext', 'r+');
-Yii::$app->fs->putStream('filename.ext', $stream);
+Yii::$app->fs->writeStream('filename.ext', $stream);
 ```
 
 ### Reading files
@@ -568,7 +568,7 @@ fclose($stream);
 To check if a file exists
 
 ```php
-$exists = Yii::$app->fs->has('filename.ext');
+$exists = Yii::$app->fs->fileExists('filename.ext');
 ```
 
 ### Deleting files
@@ -592,7 +592,7 @@ $contents = Yii::$app->fs->readAndDelete('filename.ext');
 To rename file
 
 ```php
-Yii::$app->fs->rename('filename.ext', 'newname.ext');
+Yii::$app->fs->move('filename.ext', 'newname.ext');
 ```
 
 ### Getting files mimetype
@@ -600,7 +600,7 @@ Yii::$app->fs->rename('filename.ext', 'newname.ext');
 To get file mimetype
 
 ```php
-$mimetype = Yii::$app->fs->getMimetype('filename.ext');
+$mimetype = Yii::$app->fs->mimeType('filename.ext');
 ```
 
 ### Getting files timestamp
@@ -608,7 +608,7 @@ $mimetype = Yii::$app->fs->getMimetype('filename.ext');
 To get file timestamp
 
 ```php
-$timestamp = Yii::$app->fs->getTimestamp('filename.ext');
+$timestamp = Yii::$app->fs->lastModified('filename.ext');
 ```
 
 ### Getting files size
@@ -616,7 +616,7 @@ $timestamp = Yii::$app->fs->getTimestamp('filename.ext');
 To get file size
 
 ```php
-$timestamp = Yii::$app->fs->getSize('filename.ext');
+$timestamp = Yii::$app->fs->fileSize('filename.ext');
 ```
 
 ### Creating directories
@@ -624,7 +624,7 @@ $timestamp = Yii::$app->fs->getSize('filename.ext');
 To create directory
 
 ```php
-Yii::$app->fs->createDir('path/to/directory');
+Yii::$app->fs->createDirectory('path/to/directory');
 ```
 
 Directories are also made implicitly when writing to a deeper path
@@ -658,7 +658,7 @@ You can also change and check visibility of existing files
 ```php
 use League\Flysystem\AdapterInterface;
 
-if (Yii::$app->fs->getVisibility('filename.ext') === AdapterInterface::VISIBILITY_PRIVATE) {
+if (Yii::$app->fs->visibility('filename.ext') === AdapterInterface::VISIBILITY_PRIVATE) {
     Yii::$app->fs->setVisibility('filename.ext', AdapterInterface::VISIBILITY_PUBLIC);
 }
 ```
@@ -671,7 +671,7 @@ To list contents
 $contents = Yii::$app->fs->listContents();
 
 foreach ($contents as $object) {
-    echo $object['basename']
+    echo basename($object->path())
         . ' is located at' . $object['path']
         . ' and is a ' . $object['type'];
 }
@@ -682,47 +682,3 @@ By default Flysystem lists the top directory non-recursively. You can supply a d
 ```php
 $contents = Yii::$app->fs->listContents('path/to/directory', true);
 ```
-
-### Listing paths
-
-To list paths
-
-```php
-$paths = Yii::$app->fs->listPaths();
-
-foreach ($paths as $path) {
-    echo $path;
-}
-```
-
-### Listing with ensured presence of specific metadata
-
-To list with ensured presence of specific metadata
-
-```php
-$listing = Yii::$app->fs->listWith(
-    ['mimetype', 'size', 'timestamp'],
-    'optional/path/to/directory',
-    true
-);
-
-foreach ($listing as $object) {
-    echo $object['path'] . ' has mimetype: ' . $object['mimetype'];
-}
-```
-
-### Getting file info with explicit metadata
-
-To get file info with explicit metadata
-
-```php
-$info = Yii::$app->fs->getWithMetadata('path/to/filename.ext', ['timestamp', 'mimetype']);
-echo $info['mimetype'];
-echo $info['timestamp'];
-```
-
-## Donating
-
-Support this project and [others by creocoder](https://gratipay.com/creocoder/) via [gratipay](https://gratipay.com/creocoder/).
-
-[![Support via Gratipay](https://cdn.rawgit.com/gratipay/gratipay-badge/2.3.0/dist/gratipay.svg)](https://gratipay.com/creocoder/)

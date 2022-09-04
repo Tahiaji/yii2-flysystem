@@ -9,7 +9,9 @@ namespace creocoder\flysystem;
 
 use League\Flysystem\AdapterInterface;
 use League\Flysystem\Cached\CachedAdapter;
+use League\Flysystem\Config;
 use League\Flysystem\Filesystem as NativeFilesystem;
+use League\Flysystem\FilesystemAdapter;
 use League\Flysystem\Replicate\ReplicateAdapter;
 use Yii;
 use yii\base\Component;
@@ -23,43 +25,34 @@ use yii\caching\Cache;
  * @method void assertAbsent(string $path)
  * @method void assertPresent(string $path)
  * @method boolean copy(string $path, string $newpath)
- * @method boolean createDir(string $dirname, array $config = null)
+ * @method boolean createDirectory(string $dirname, array $config = null)
  * @method boolean delete(string $path)
- * @method boolean deleteDir(string $dirname)
+ * @method boolean deleteDirectory(string $dirname)
  * @method \League\Flysystem\Handler get(string $path, \League\Flysystem\Handler $handler = null)
- * @method \League\Flysystem\AdapterInterface getAdapter()
- * @method \League\Flysystem\Config getConfig()
- * @method array|false getMetadata(string $path)
- * @method string|false getMimetype(string $path)
- * @method integer|false getSize(string $path)
- * @method integer|false getTimestamp(string $path)
- * @method string|false getVisibility(string $path)
- * @method array getWithMetadata(string $path, array $metadata)
- * @method boolean has(string $path)
+ * @method Config getConfig()
+ * @method string|false mimeType(string $path)
+ * @method integer|false fileSize(string $path)
+ * @method integer|false lastModified(string $path)
+ * @method string|false visibility(string $path)
+ * @method boolean fileExists(string $path)
  * @method array listContents(string $directory = '', boolean $recursive = false)
- * @method array listFiles(string $path = '', boolean $recursive = false)
- * @method array listPaths(string $path = '', boolean $recursive = false)
  * @method array listWith(array $keys = [], $directory = '', $recursive = false)
- * @method boolean put(string $path, string $contents, array $config = [])
- * @method boolean putStream(string $path, resource $resource, array $config = [])
  * @method string|false read(string $path)
  * @method string|false readAndDelete(string $path)
  * @method resource|false readStream(string $path)
- * @method boolean rename(string $path, string $newpath)
+ * @method boolean move(string $path, string $newpath)
  * @method boolean setVisibility(string $path, string $visibility)
- * @method boolean update(string $path, string $contents, array $config = [])
- * @method boolean updateStream(string $path, resource $resource, array $config = [])
- * @method boolean write(string $path, string $contents, array $config = [])
  * @method boolean writeStream(string $path, resource $resource, array $config = [])
+ * @method boolean write(string $path, string $contents, array $config = [])
  *
  * @author Alexander Kochetov <creocoder@gmail.com>
  */
 abstract class Filesystem extends Component
 {
     /**
-     * @var \League\Flysystem\Config|array|string|null
+     * @var array
      */
-    public $config;
+    public $config = [];
     /**
      * @var string|null
      */
@@ -77,7 +70,12 @@ abstract class Filesystem extends Component
      */
     public $replica;
     /**
-     * @var \League\Flysystem\FilesystemInterface
+     * Note: filesystem do not have getAdapter() getter anymore.
+     * @var FilesystemAdapter
+     */
+    protected $adapter;
+    /**
+     * @var NativeFilesystem
      */
     protected $filesystem;
 
@@ -86,7 +84,7 @@ abstract class Filesystem extends Component
      */
     public function init()
     {
-        $adapter = $this->prepareAdapter();
+        $this->adapter = $this->prepareAdapter();
 
         if ($this->cache !== null) {
             /* @var Cache $cache */
@@ -96,7 +94,7 @@ abstract class Filesystem extends Component
                 throw new InvalidConfigException('The "cache" property must be an instance of \yii\caching\Cache subclasses.');
             }
 
-            $adapter = new CachedAdapter($adapter, new YiiCache($cache, $this->cacheKey, $this->cacheDuration));
+            $this->adapter = new CachedAdapter($this->adapter, new YiiCache($cache, $this->cacheKey, $this->cacheDuration));
         }
 
         if ($this->replica !== null) {
@@ -107,10 +105,10 @@ abstract class Filesystem extends Component
                 throw new InvalidConfigException('The "replica" property must be an instance of \creocoder\flysystem\Filesystem subclasses.');
             }
 
-            $adapter = new ReplicateAdapter($adapter, $filesystem->getAdapter());
+            $this->adapter = new ReplicateAdapter($this->adapter, $filesystem->getAdapter());
         }
 
-        $this->filesystem = new NativeFilesystem($adapter, $this->config);
+        $this->filesystem = new NativeFilesystem($this->adapter, $this->config);
     }
 
     /**
@@ -129,11 +127,18 @@ abstract class Filesystem extends Component
     }
 
     /**
-     * @return \League\Flysystem\FilesystemInterface
+     * @return FilesystemAdapter
      */
-    public function getFilesystem()
+    public function getAdapter(): FilesystemAdapter
+    {
+        return $this->adapter;
+    }
+
+    /**
+     * @return NativeFilesystem
+     */
+    public function getFilesystem(): NativeFilesystem
     {
         return $this->filesystem;
     }
-    
 }

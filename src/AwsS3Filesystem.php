@@ -7,8 +7,12 @@
 
 namespace creocoder\flysystem;
 
+use Aws\CacheInterface;
+use Aws\Credentials\CredentialsInterface;
 use Aws\S3\S3Client;
-use League\Flysystem\AwsS3v3\AwsS3Adapter;
+use League\Flysystem\AwsS3V3\AwsS3V3Adapter;
+use League\Flysystem\AwsS3V3\PortableVisibilityConverter;
+use League\Flysystem\Visibility;
 use yii\base\InvalidConfigException;
 
 /**
@@ -47,9 +51,19 @@ class AwsS3Filesystem extends Filesystem
      */
     public $prefix;
     /**
+     * Visibility::PUBLIC OR Visibility::PRIVATE
+     * @var string
+     */
+    public $visibility = Visibility::PUBLIC;
+    /**
      * @var bool
      */
     public $pathStyleEndpoint = false;
+    /**
+     * default FinfoMimeTypeDetector
+     * @var MimeTypeDetector|null
+     */
+    public $mimeTypeDetector;
     /**
      * @var array
      */
@@ -63,9 +77,13 @@ class AwsS3Filesystem extends Filesystem
      */
     public $endpoint;
     /**
-     * @var array|\Aws\CacheInterface|\Aws\Credentials\CredentialsInterface|bool|callable
+     * @var array|CacheInterface|CredentialsInterface|bool|callable
      */
     public $credentials;
+    /**
+     * @var S3Client
+     */
+    protected $client;
 
     /**
      * @inheritdoc
@@ -86,13 +104,17 @@ class AwsS3Filesystem extends Filesystem
             throw new InvalidConfigException('The "bucket" property must be set.');
         }
 
+        if (!in_array($this->visibility, [Visibility::PUBLIC, Visibility::PRIVATE])) {
+            throw new InvalidConfigException('The "visibility" property must be private or public');
+        }
+
         parent::init();
     }
 
     /**
-     * @return AwsS3Adapter
+     * @return AwsS3V3Adapter
      */
-    protected function prepareAdapter()
+    protected function prepareAdapter(): AwsS3V3Adapter
     {
         $config = [];
 
@@ -121,8 +143,24 @@ class AwsS3Filesystem extends Filesystem
 
         $config['version'] = (($this->version !== null) ? $this->version : 'latest');
 
-        $client = new S3Client($config);
+        $this->client = new S3Client($config);
 
-        return new AwsS3Adapter($client, $this->bucket, $this->prefix, $this->options, $this->streamReads);
+        return new AwsS3V3Adapter(
+            $this->client,
+            $this->bucket,
+            $this->prefix,
+            new PortableVisibilityConverter($this->visibility),
+            $this->mimeTypeDetector,
+            $this->options,
+            $this->streamReads
+        );
+    }
+
+    /**
+     * @return S3Client
+     */
+    public function getClient(): S3Client
+    {
+        return $this->client;
     }
 }
